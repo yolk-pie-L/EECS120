@@ -1,0 +1,26 @@
+mergesort-omp-10000
+Timer: gettimeofday
+Timer resolution: ~ 1 us (?)
+
+N == 10000
+
+Quicksort: 0.001092 seconds ==> 9.15751 million keys per second
+	(Array is sorted.)
+num_threads=30
+My sort: 0.047699 seconds ==> 0.209648 million keys per second
+	(Array is sorted.)
+	(Arrays are equal.)
+
+mergesort-omp-10000000
+Timer: gettimeofday
+Timer resolution: ~ 1 us (?)
+
+N == 10000000
+
+Quicksort: 1.87264 seconds ==> 5.34007 million keys per second
+	(Array is sorted.)
+num_threads=30
+My sort: 0.97136 seconds ==> 10.2948 million keys per second
+	(Array is sorted.)
+	(Arrays are equal.)
+
