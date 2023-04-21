@@ -1,26 +1,35 @@
-mergesort-omp-10000
+rm -f core *.o *~ mergesort-omp mergesort-seq
+icpc   -O3 -g  -qopenmp  -o driver.o -c driver.cc
+icpc   -O3 -g  -qopenmp  -o sort.o -c sort.cc
+icpc   -O3 -g  -qopenmp  -o mergesort-seq.o -c mergesort-seq.cc
+icpc -O3 -g  -qopenmp -o mergesort-seq driver.o sort.o mergesort-seq.o
+icpc   -O3 -g  -qopenmp  -o mergesort-omp.o -c mergesort-omp.cc
+icpc -O3 -g  -qopenmp -o mergesort-omp driver.o sort.o mergesort-omp.o
+mergesort-seq-100000000
 Timer: gettimeofday
 Timer resolution: ~ 1 us (?)
 
-N == 10000
+N == 100000000
 
-Quicksort: 0.001092 seconds ==> 9.15751 million keys per second
+Quicksort: 21.7003 seconds ==> 4.60823 million keys per second
 	(Array is sorted.)
-num_threads=30
-My sort: 0.047699 seconds ==> 0.209648 million keys per second
+num_threads=10
+psize=50000
+My sort: 2.72669 seconds ==> 36.6745 million keys per second
 	(Array is sorted.)
 	(Arrays are equal.)
 
-mergesort-omp-10000000
+mergesort-omp-100000000
 Timer: gettimeofday
 Timer resolution: ~ 1 us (?)
 
-N == 10000000
+N == 100000000
 
-Quicksort: 1.87264 seconds ==> 5.34007 million keys per second
+Quicksort: 21.6753 seconds ==> 4.61354 million keys per second
 	(Array is sorted.)
-num_threads=30
-My sort: 0.97136 seconds ==> 10.2948 million keys per second
+num_threads=10
+psize=50000, pmergesize=10000
+My sort: 4.14578 seconds ==> 24.1209 million keys per second
 	(Array is sorted.)
 	(Arrays are equal.)
 

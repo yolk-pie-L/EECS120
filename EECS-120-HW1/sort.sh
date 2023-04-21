@@ -5,7 +5,7 @@
 #SBATCH -A class-eecs120      		## Account to charge
 #SBATCH -p standard          		## Partition/queue name
 #SBATCH --nodes=1            		## Request 1 node
-#SBATCH --cpus-per-task=30  		## Number of threads per task (OMP threads)
+#SBATCH --cpus-per-task=10 		## Number of threads per task (OMP threads)
 
 # Module load intel compiler 
 module load intel/2022.2
@@ -19,13 +19,15 @@ module load intel/2022.2
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 # OMP_NUM_THREADS=10
 
+make clean
+make mergesort-seq
+make mergesort-omp
+
 # Run OpenMP mergesort on 10 million elements
-echo mergesort-omp-10000
-./mergesort-omp 10000
+echo mergesort-seq-100000000
+./mergesort-seq 100000000
 
-echo mergesort-omp-10000000
-./mergesort-omp 10000000
 
-# echo mergesort-seq
-# ./mergesort-seq 10000
+echo mergesort-omp-100000000
+./mergesort-omp 100000000
 

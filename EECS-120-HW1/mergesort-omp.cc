@@ -12,6 +12,9 @@
 #include <omp.h>
 #include "sort.hh"
 
+int psize = 50000;
+int pmergesize = 10000;
+
 inline void simple_sort(int N, keytype* A, keytype* res_arr){
   if(N == 1){
     *res_arr = *A;
@@ -34,7 +37,7 @@ mySort (int N, keytype* A)
   keytype* A_copy = (keytype*)malloc(N * sizeof(keytype));
   memcpy(A_copy, A, sizeof(keytype) * N);
   #ifdef DEBUG
-  printf("finish copy A to A_copy\n");
+  printf("\n\n start mysort\nfinish copy A to A_copy\n");
   #endif
   #pragma omp parallel
   {
@@ -42,6 +45,7 @@ mySort (int N, keytype* A)
     {
     pmergesort(N, A_copy, A);
     printf("num_threads=%d\n", omp_get_num_threads());
+    printf("psize=%d, pmergesize=%d\n", psize, pmergesize);
     }
   }
 }
@@ -52,9 +56,8 @@ void pmergesort(int N, keytype* A, keytype* res_arr){
     return;
   }
   int half_length = N / 2;
-  // #pragma omp task
-  // {
-    #pragma omp task shared(res_arr, A)
+  if (N > psize){
+    #pragma omp task shared(res_arr, A) 
     {
     pmergesort(half_length, res_arr, A);
     }
@@ -62,7 +65,7 @@ void pmergesort(int N, keytype* A, keytype* res_arr){
     printf("pmergesort arr1: ");
     print_arr(A, half_length);
     #endif
-    #pragma omp task shared(res_arr, A)
+    #pragma omp task shared(res_arr, A) 
     {
     pmergesort(N - half_length, res_arr + half_length, A + half_length);
     }
@@ -71,7 +74,10 @@ void pmergesort(int N, keytype* A, keytype* res_arr){
     print_arr(A + half_length, N - half_length);
     #endif
     #pragma omp taskwait
-  // }
+  }else{
+    pmergesort(half_length, res_arr, A);
+    pmergesort(N - half_length, res_arr + half_length, A + half_length);
+  }
   pmerge(half_length, A, N - half_length, A + half_length, res_arr);
   #ifdef DEBUG
   printf("merged_arr: ");
@@ -80,7 +86,7 @@ void pmergesort(int N, keytype* A, keytype* res_arr){
 }
 
 
-void pmerge(int na, keytype* A, int nb, keytype* B, keytype* res_arr)
+inline void pmerge(int na, keytype* A, int nb, keytype* B, keytype* res_arr)
 {
   keytype* long_arr = NULL;
   keytype* short_arr = NULL;
@@ -119,27 +125,59 @@ void pmerge(int na, keytype* A, int nb, keytype* B, keytype* res_arr)
   printf("long_arr: ");
   print_arr(long_arr, long_arr_length);
   #endif
-  // #pragma omp parallel sections
-  // {
-  //   #pragma omp section
-  //   {
-    pmerge(half_short, short_arr, half_long, long_arr, res_arr); // first half, A1 & B1
-    // }
-    #ifdef DEBUG
-    printf("pmerge arr1: ");
-    print_arr(res_arr, half_short + half_long);
-    #endif
-    // #pragma omp section
+  if(short_arr_length > pmergesize){
+    // #pragma omp parallel sections 
     // {
-    pmerge(short_arr_length - half_short, short_arr + half_short, 
-            long_arr_length - half_long, long_arr + half_long, 
-            res_arr + half_short + half_long); // A2 & B2
+      #pragma omp task
+      {
+      pmerge(half_short, short_arr, half_long, long_arr, res_arr); // first half, A1 & B1
+      }
+      #ifdef DEBUG
+      printf("pmerge arr1: ");
+      print_arr(res_arr, half_short + half_long);
+      #endif
+      #pragma omp task 
+      {
+      pmerge(short_arr_length - half_short, short_arr + half_short, 
+              long_arr_length - half_long, long_arr + half_long, 
+              res_arr + half_short + half_long); // A2 & B2
+      }
+      #ifdef DEBUG
+      printf("pmerge arr2: ");
+      print_arr(res_arr, na + nb - half_short - half_long);
+      #endif
+      #pragma omp taskwait
     // }
-    #ifdef DEBUG
-    printf("pmerge arr2: ");
-    print_arr(res_arr, na + nb - half_short - half_long);
-    #endif
-  // }
+  }else{
+    pmerge(half_short, short_arr, half_long, long_arr, res_arr); // first half, A1 & B1
+    pmerge(short_arr_length - half_short, short_arr + half_short, 
+        long_arr_length - half_long, long_arr + half_long, 
+        res_arr + half_short + half_long); // A2 & B2
+  }
+}
+
+void smerge(int na, keytype* A, int nb, keytype* B, keytype* res_arr){
+  int a = 0, b = 0, r = 0;
+  while(a < na && b < nb){
+    if(A[a] < B[b]){
+      res_arr[r] = A[a];
+      a++;
+    }
+    else{
+      res_arr[r] = B[b];
+      b++;
+    }
+    r++;
+  }
+  #ifdef DEBUG
+  printf("a=%d, b=%d, r=%d\n", a, b, r);
+  #endif
+  if(a < na){
+    memcpy(res_arr + r, A + a, sizeof(keytype) * (na -a));
+  }
+  if(b < nb){
+    memcpy(res_arr + r, B + b, sizeof(keytype) * (nb - b));
+  }
 }
 
 inline void base_condition(keytype num, int arr_length, keytype* arr, keytype* res_arr){
@@ -158,6 +196,7 @@ inline void base_condition(keytype num, int arr_length, keytype* arr, keytype* r
   printf("after base condition: ");
   print_arr(res_arr, arr_length + 1);
   #endif
+
 }
 
 int binary_search(keytype x, keytype* arr, int arr_length){

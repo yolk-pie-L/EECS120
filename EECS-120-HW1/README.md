@@ -1,0 +1,1 @@
+base_condition using binary search is slower than brute force

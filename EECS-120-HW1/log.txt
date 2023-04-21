@@ -1,0 +1,30 @@
+s: mergesort s: smerge 1.3
+s: mergesort s: pmerge 3.3
+
+thread = 2
+p: mergesort s: pmerge 6.3
+p: mergesort(size > 100) s: pmerge 2.38
+p: mergesort(size > 10000) s: pmerge 2.18
+p: mergesort(size > 100000) s: pmerge 2.10
+p: mergesort(size > 50000) s: pmerge 2.08
+
+thread = 2
+p: mergesort(size > 50000) p: pmerge(psize >10000) 2.03
+
+if else:
+thread = 2
+p: mergesort(size > 50000) s: pmerge 1.73
+p: mergesort(size > 50000) p: pmerge(psize > 10000) 1.67
+
+N=100million
+p: mergesort s: smerge 8
+s: mergesort s: smerge 14.6
+p: mergesort p: pmerge 19
+p: mergesort p: pmerge(include smerge) 8
+p: mergesort s: pmerge 20
+
+thread = 4
+p: mergesort s: pmerge 12
+p: mergesort p: pmerge 10
+
+4.16

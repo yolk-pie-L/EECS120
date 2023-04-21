@@ -47,10 +47,12 @@ main (int argc, char* argv[])
 
   /* Create an input array of length N, initialized to random values */
   keytype* A_in = newKeys (N);
-  // for(int i = 0; i < N; ++i){
-  //   A_in[i] = N - i + 1;
-  // }
-  // print_arr(A_in, N);
+  #ifdef DEBUG
+  for(int i = 0; i < N; ++i){
+    A_in[i] = N - i + 1;
+  }
+  print_arr(A_in, N);
+  #endif
   for (int i = 0; i < N; ++i)
     A_in[i] = lrand48 ();
 

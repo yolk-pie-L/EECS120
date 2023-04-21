@@ -10,6 +10,7 @@
 /** 'keytype' is the primitive type for sorting keys */
 typedef unsigned long keytype;
 
+
 /**
  *  Sorts an input array containing N keys, A[0:N-1]. The sorted
  *  output overwrites the input array.
@@ -47,15 +48,13 @@ void pmergesort(int N, keytype* A, keytype* res_arr);
 
 void pmerge(int na, keytype* A, int nb, keytype* B, keytype* res_arr);
 
-void base_condition(keytype num, int arr_length, keytype* arr, keytype* res_arr);
+inline void base_condition(keytype num, int arr_length, keytype* arr, keytype* res_arr);
 
 int binary_search(keytype x, keytype* arr, int arr_length);
 
 void print_arr(keytype* A, int arr_length);
 
-inline void  merge  (keytype *datal , int sizel , keytype *datar , int sizer , keytype *data2);
-void msort(keytype *data, int size, keytype *data2);
-void mergesort(keytype *data, int size);
+void smerge(int na, keytype* A, int nb, keytype* B, keytype* res_arr);
 
 #endif
 

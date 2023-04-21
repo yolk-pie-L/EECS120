@@ -2,8 +2,8 @@ CC = icpc
 CFLAGS =
 COPTFLAGS = -O3 -g  -qopenmp
 LDFLAGS =
-DEBUGFLAGS = 
-# -g -DDEBUG
+DEBUGFLAGS =
+#   -g -DDEBUG
 
 default:
 	@echo "=================================================="
@@ -22,9 +22,6 @@ mergesort-omp: driver.o sort.o mergesort-omp.o
 mergesort-seq: driver.o sort.o mergesort-seq.o
 	$(CC) $(COPTFLAGS) -o $@ $^
 
-github: driver.o sort.o github.o
-	$(CC) $(COPTFLAGS) -o $@ $^
-
 %.o: %.cc
 	$(CC)  $(CFLAGS) $(COPTFLAGS) $(DEBUGFLAGS) -o $@ -c $<
 
@@ -32,6 +29,6 @@ debug-mergesort: driver.o sort.o mergesort-omp.o
 	$(CC) $(COPTFLAGS) $(DEBUGFLAGS) -o $@ $^
 
 clean:
-	rm -f core *.o *~ mergesort-omp
+	rm -f core *.o *~ mergesort-omp mergesort-seq
 
 # eof
