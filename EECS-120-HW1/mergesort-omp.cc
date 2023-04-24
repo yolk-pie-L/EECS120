@@ -149,8 +149,8 @@ inline void pmerge(int na, keytype* A, int nb, keytype* B, keytype* res_arr)
       #pragma omp taskwait
     // }
   }else{
-    pmerge(half_short, short_arr, half_long, long_arr, res_arr); // first half, A1 & B1
-    pmerge(short_arr_length - half_short, short_arr + half_short, 
+    smerge(half_short, short_arr, half_long, long_arr, res_arr); // first half, A1 & B1
+    smerge(short_arr_length - half_short, short_arr + half_short, 
         long_arr_length - half_long, long_arr + half_long, 
         res_arr + half_short + half_long); // A2 & B2
   }

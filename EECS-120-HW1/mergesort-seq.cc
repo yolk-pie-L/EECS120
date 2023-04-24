@@ -77,7 +77,7 @@ void pmergesort(int N, keytype* A, keytype* res_arr){
     pmergesort(half_length, res_arr, A);
     pmergesort(N - half_length, res_arr + half_length, A + half_length);
   }
-  smerge(half_length, A, N - half_length, A + half_length, res_arr);
+  pmerge(half_length, A, N - half_length, A + half_length, res_arr);
   #ifdef DEBUG
   printf("merged_arr: ");
   print_arr(res_arr, N);
