@@ -5,7 +5,7 @@
 #SBATCH -A class-eecs120      		## Account to charge
 #SBATCH -p standard          		## Partition/queue name
 #SBATCH --nodes=1            		## Request 1 node
-#SBATCH --cpus-per-task=40 		## Number of threads per task (OMP threads)
+#SBATCH --cpus-per-task=2 		## Number of threads per task (OMP threads)
 
 # Module load intel compiler 
 module load intel/2022.2

@@ -11,11 +11,11 @@ Timer resolution: ~ 1 us (?)
 
 N == 100000000
 
-Quicksort: 21.6353 seconds ==> 4.62207 million keys per second
+Quicksort: 22.5479 seconds ==> 4.43499 million keys per second
 	(Array is sorted.)
-num_threads=40
+num_threads=2
 psize=50000
-My sort: 4.76448 seconds ==> 20.9886 million keys per second
+My sort: 21.3222 seconds ==> 4.68994 million keys per second
 	(Array is sorted.)
 	(Arrays are equal.)
 
@@ -25,11 +25,11 @@ Timer resolution: ~ 1 us (?)
 
 N == 100000000
 
-Quicksort: 21.6285 seconds ==> 4.62353 million keys per second
+Quicksort: 22.5294 seconds ==> 4.43865 million keys per second
 	(Array is sorted.)
-num_threads=40
+num_threads=2
 psize=50000, pmergesize=10000
-My sort: 0.869136 seconds ==> 115.057 million keys per second
+My sort: 8.61081 seconds ==> 11.6133 million keys per second
 	(Array is sorted.)
 	(Arrays are equal.)
 
