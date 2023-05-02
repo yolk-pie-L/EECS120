@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <chrono>
 #include "render.hh"
+#include <stdio.h>
 
 using namespace std;
 
@@ -59,16 +60,22 @@ main(int argc, char* argv[]) {
   gil::rgb8_image_t img(height, width);
   auto img_view = gil::view(img);
 
+  // FILE* fp;
+  // fp = fopen("serial.txt", "w");
+
   y = minY;
   for (int j = 0; j < height; ++j) {
     x = minX;
     for (int i = 0; i < width; ++i) {
       double a = mandelbrot(x, y)/512.0;
+      // fprintf(fp, "%d %d %f %f %f\n", i, j, a, x, y);
       img_view(i, j) = render(a);
       x += it;
     }
     y += jt;
   }
+  // fclose(fp);
+
   gil::png_write_view("mandelbrot_serial.png", const_view(img));
   auto end_time = std::chrono::high_resolution_clock::now();
   auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();

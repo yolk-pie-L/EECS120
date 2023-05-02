@@ -14,12 +14,15 @@ module load boost/1.78.0/gcc.11.2.0
 module load mpich/4.0/intel.2022.2
 
 make clean
-make mandelbrot_serial
-make mandelbrot_block
+# make mandelbrot_serial
+# make mandelbrot_block
+make mandelbrot_cyclic
 
 # Run the program 
-echo "serial"
-./mandelbrot_serial 5000 5000 
+# echo "serial"
+# ./mandelbrot_serial 5000 5000 
 
-echo "block"
-mpirun -np $SLURM_NTASKS ./mandelbrot_block 5000 5000 
+# echo "block"
+# mpirun -np $SLURM_NTASKS ./mandelbrot_block 5000 5000 
+
+# mpirun -np $SLURM_NTASKS ./mandelbrot_cylcic 5000 5000 

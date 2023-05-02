@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <mpi.h>
 #include "render.hh"
+#include <stdio.h>
 
 
 int
@@ -61,10 +62,11 @@ main(int argc, char* argv[]) {
   uint start_j = height * rank / size;
   uint stop_j = height * (rank + 1) / size;
   if(rank == size - 1){
-    stop_j = height - 1;
+    stop_j = height;
   }
 
-  double* send_buffer = (double*) malloc(sizeof(double) * (stop_j - start_j) * width);
+  int send_size = (stop_j - start_j) * width;
+  double* send_buffer = (double*) malloc(sizeof(double) * send_size);
   double* recv_buffer = (double*) malloc(sizeof(double) * height * width);
   int* recv_counts = (int*)malloc(sizeof(int) * size);
   int *displs = (int*) malloc(sizeof(int) * size);
@@ -76,20 +78,18 @@ main(int argc, char* argv[]) {
     displs[i] = displs[i - 1] + recv_counts[i - 1];
   }
 
-
   y = minY + jt * start_j;
   for (int j = 0; j < stop_j - start_j; ++j) {
     x = minX;
     for (int i = 0; i < width; ++i) {
-      int a = mandelbrot(x, y);
-      send_buffer[j * height + i] = a / 512.0;
+      send_buffer[j * height + i] = mandelbrot(x, y) / 512.0;
       x += it;
     }
     y += jt;
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  MPI_Gatherv(send_buffer, (stop_j - start_j) * width, MPI_DOUBLE, 
+  MPI_Gatherv(send_buffer, send_size, MPI_DOUBLE, 
   recv_buffer, recv_counts, displs, MPI_DOUBLE, 
   0, MPI_COMM_WORLD);
 
@@ -97,19 +97,26 @@ main(int argc, char* argv[]) {
     gil::rgb8_image_t img(height, width);
     auto img_view = gil::view(img);
 
+    // FILE* fp;
+    // fp = fopen("block.txt", "w");
+
     y = minY;
     for (int j = 0; j < height; ++j) {
       x = minX;
       for (int i = 0; i < width; ++i) {
         img_view(i, j) = render(recv_buffer[j * height + i]);
+        // fprintf(fp, "%d %d %f %f %f\n", i, j, recv_buffer[j * height + i], x, y);
         x += it;
       }
       y += jt;
     }
     gil::png_write_view("mandelbrot_block.png", const_view(img));
+    // fclose(fp);
   }
   free(send_buffer);
   free(recv_buffer);
+  free(recv_counts);
+  free(displs);
   end_time = MPI_Wtime();
   printf("Total running time: %f seconds\n", elapsed_time);
   MPI_Finalize();
