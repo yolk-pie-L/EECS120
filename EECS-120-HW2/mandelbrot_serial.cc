@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include <cstdlib>
-
+#include <chrono>
 #include "render.hh"
 
 using namespace std;
@@ -33,6 +33,7 @@ mandelbrot(double x, double y) {
 
 int
 main(int argc, char* argv[]) {
+  auto start_time = std::chrono::high_resolution_clock::now();
   double minX = -2.1;
   double maxX = 0.7;
   double minY = -1.25;
@@ -49,8 +50,9 @@ main(int argc, char* argv[]) {
     return -1;
   }
 
-  double it = (maxY - minY)/height;
-  double jt = (maxX - minX)/width;
+
+  double it = (maxX - minX)/width; // x stand for real numbers
+  double jt = (maxY - minY)/height;
   double x, y;
 
 
@@ -58,15 +60,20 @@ main(int argc, char* argv[]) {
   auto img_view = gil::view(img);
 
   y = minY;
-  for (int i = 0; i < height; ++i) {
+  for (int j = 0; j < height; ++j) {
     x = minX;
-    for (int j = 0; j < width; ++j) {
-      img_view(j, i) = render(mandelbrot(x, y)/512.0);
-      x += jt;
+    for (int i = 0; i < width; ++i) {
+      double a = mandelbrot(x, y)/512.0;
+      img_view(i, j) = render(a);
+      x += it;
     }
-    y += it;
+    y += jt;
   }
-  gil::png_write_view("mandelbrot.png", const_view(img));
+  gil::png_write_view("mandelbrot_serial.png", const_view(img));
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+  cout << "Total running time: " << duration_ms / 1000.0 << " seconds" << endl;
+
 }
 
 /* eof */
