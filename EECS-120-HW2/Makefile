@@ -32,7 +32,6 @@ mandelbrot_dynamic$(EXEEXT): mandelbrot_dynamic.cc $(SRCS_COMMON) $(DEPS_COMMON)
 clean:
 	rm -f $(TARGETS) 
 	rm -f *.png
-	rm -f *.err
-	rm -f *.out
+	rm -f *.txt
 
 # eof

@@ -6,9 +6,6 @@
 
 #include <iostream>
 #include <cstdlib>
-
-#include <iostream>
-#include <cstdlib>
 #include <mpi.h>
 #include "render.hh"
 
@@ -76,20 +73,15 @@ main(int argc, char* argv[]) {
   for(int i = 1; i < size; i++){
     displs[i] = displs[i - 1] + recv_counts[i - 1];
   }
-  if(rank == 0){
-  for(int i = 0; i < size; i++){
-    printf("displs[%d]=%d recv_counts[%d]=%d\n", i, displs[i], i, recv_counts[i]);
-  }
-  }
 
-  printf("send_size=%d, step=%d\n", send_size, step);
+  // printf("send_size=%d, step=%d\n", send_size, step);
 
   y = minY + jt * start_j;
   for (int j = start_j; j < height; j += step) {
     x = minX;
     for (int i = 0; i < width; ++i) {
       int a = mandelbrot(x, y);
-      send_buffer[j / step * height + i] = a / 512.0;
+      send_buffer[j / step * width + i] = a / 512.0;
       x += it;
     }
     y += jt * step;
@@ -108,8 +100,8 @@ main(int argc, char* argv[]) {
     for (int j = 0; j < height; ++j) {
       x = minX;
       int processor = j % size;
-      int real_j = j / size * height + displs[processor];
-      // printf("process=%d real_j=%d j = %d\n", processor, real_j / height, j);
+      int real_j = j / size * width + displs[processor];
+      // printf("process=%d real_j=%d j = %d\n", processor, real_j / width, j);
       for (int i = 0; i < width; ++i) {
         img_view(i, j) = render(recv_buffer[real_j + i]);
         x += it;
@@ -118,12 +110,15 @@ main(int argc, char* argv[]) {
     }
     gil::png_write_view("mandelbrot_cyclic.png", const_view(img));
   }
-  // free(send_buffer);
-  // free(recv_buffer);
-  // free(recv_counts);
-  // free(displs);
+  free(send_buffer);
+  free(recv_buffer);
+  free(recv_counts);
+  free(displs);
   end_time = MPI_Wtime();
-  printf("Total running time: %f seconds\n", elapsed_time);
+  elapsed_time = end_time - start_time;
+  if(rank == 0){
+    printf("Total running time: %f seconds\n", elapsed_time);
+  }
   MPI_Finalize();
 }  
 
