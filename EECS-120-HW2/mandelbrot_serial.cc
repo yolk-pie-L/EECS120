@@ -51,6 +51,7 @@ main(int argc, char* argv[]) {
     return -1;
   }
 
+  printf("width: %d height: %d\n", width, height);
 
   double it = (maxX - minX)/width; // x stand for real numbers
   double jt = (maxY - minY)/height;
@@ -62,22 +63,29 @@ main(int argc, char* argv[]) {
 
   // FILE* fp;
   // fp = fopen("serial.txt", "w");
-
+  double* res = (double*) malloc(sizeof(double) * height * width);
   y = minY;
   for (int j = 0; j < height; ++j) {
     x = minX;
     for (int i = 0; i < width; ++i) {
-      double a = mandelbrot(x, y)/512.0;
-      // fprintf(fp, "%d %d %f %f %f\n", i, j, a, x, y);
-      img_view(i, j) = render(a);
+      res[j * width + i] = mandelbrot(x, y)/512.0;
       x += it;
     }
     y += jt;
   }
-  // fclose(fp);
+  auto end_time = std::chrono::high_resolution_clock::now();
+  y = minY;
+  for (int j = 0; j < height; ++j) {
+    x = minX;
+    for (int i = 0; i < width; ++i) {
+      img_view(i, j) = render(res[j* width + i]);
+      x += it;
+    }
+    y += jt;
+  }
 
   gil::png_write_view("mandelbrot_serial.png", const_view(img));
-  auto end_time = std::chrono::high_resolution_clock::now();
+
   auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
   cout << "Total running time: " << duration_ms / 1000.0 << " seconds" << endl;
 

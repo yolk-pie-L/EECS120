@@ -92,7 +92,7 @@ main(int argc, char* argv[]) {
   MPI_Gatherv(send_buffer, send_size, MPI_DOUBLE, 
   recv_buffer, recv_counts, displs, MPI_DOUBLE, 
   0, MPI_COMM_WORLD);
-
+  end_time = MPI_Wtime();
   if(rank == 0){
     gil::rgb8_image_t img(height, width);
     auto img_view = gil::view(img);
@@ -117,7 +117,7 @@ main(int argc, char* argv[]) {
   free(recv_buffer);
   free(recv_counts);
   free(displs);
-  end_time = MPI_Wtime();
+
   elapsed_time = end_time - start_time;
   if(rank == 0){
     printf("Total running time: %f seconds\n", elapsed_time); 

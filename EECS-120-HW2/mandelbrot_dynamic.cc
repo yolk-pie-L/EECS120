@@ -70,7 +70,8 @@ void master(int rank, int size, int height, int width){
     int data = 0;
     MPI_Send(&data, 1, MPI_INT, count, TERMINATE_TAG, MPI_COMM_WORLD);
   }
-
+  end_time = MPI_Wtime();
+  elapsed_time = end_time - start_time;
   gil::rgb8_image_t img(height, width);
   auto img_view = gil::view(img);
 
@@ -80,8 +81,7 @@ void master(int rank, int size, int height, int width){
     }
   }
   gil::png_write_view("mandelbrot_dynamic.png", const_view(img));
-  end_time = MPI_Wtime();
-  elapsed_time = end_time - start_time;
+
   printf("Total running time: %f seconds\n", elapsed_time); 
 
 }
