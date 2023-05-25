@@ -12,6 +12,15 @@
 # Module load Cuda Compiler
 module load cuda/11.7.1
 
+rm naive
+rm stride
+rm sequential
+
+# Compile naive
+nvcc naive.cu timer.c -o naive
+nvcc stride.cu timer.c -o stride
+nvcc sequential.cu timer.c -o sequential
+
 # Runs a bunch of standard command-line
 # utilities, just as an example:
 
@@ -19,12 +28,14 @@ echo "Script began:" `date`
 echo "Node:" `hostname`
 echo "Current directory: ${PWD}"
 
-echo ""
-echo "=== Running 5 trials of naive ... ==="
-for trial in 1 2 3 4 5; do
-  echo "*** Trial ${trial} ***"
-  ./naive
-done
+echo "naive"
+./naive
+
+echo "stride"
+./stride
+
+echo "sequential"
+./sequential
 
 echo ""
 echo "=== Done! ==="

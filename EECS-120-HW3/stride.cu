@@ -12,6 +12,9 @@ typedef float dtype;
 
 #define MIN(x,y) ((x < y) ? x : y)
 
+//gridDim,
+//nextPow2
+
 /* return the next power of 2 number that is larger than x */
 unsigned int nextPow2( unsigned int x ) {
   --x;
@@ -62,7 +65,29 @@ dtype reduce_cpu(dtype *data, int n) {
 __global__ void
 kernel1(dtype *input, dtype *output, unsigned int n)
 {
+ __shared__  dtype scratch[MAX_THREADS];
 
+  unsigned int bid = gridDim.x * blockIdx.y + blockIdx.x;
+  unsigned int i = bid * blockDim.x + threadIdx.x;
+
+  if(i < n) {
+    scratch[threadIdx.x] = input[i]; 
+  } else {
+    scratch[threadIdx.x] = 0;
+  }
+  __syncthreads ();
+
+  for(unsigned int s = 1; s < blockDim.x; s = s << 1) {
+    int index = threadIdx.x * 2 * s;
+    if(index + s < blockDim.x && (blockIdx.x * blockDim.x + index + s) < n) {
+      scratch[index] += scratch[index + s];
+    }
+    __syncthreads ();
+  }
+
+  if(threadIdx.x == 0) {
+    output[bid] = scratch[0];
+  }
 }
 
 int 
