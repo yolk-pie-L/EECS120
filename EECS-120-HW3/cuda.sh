@@ -15,11 +15,17 @@ module load cuda/11.7.1
 rm naive
 rm stride
 rm sequential
+rm first_add
+rm unroll
+rm multiple
 
 # Compile naive
 nvcc naive.cu timer.c -o naive
 nvcc stride.cu timer.c -o stride
 nvcc sequential.cu timer.c -o sequential
+nvcc first_add.cu timer.c -o first_add
+nvcc unroll.cu timer.c -o unroll
+nvcc multiple.cu timer.c  -DGPU_DEBUG -o multiple
 
 # Runs a bunch of standard command-line
 # utilities, just as an example:
@@ -28,14 +34,23 @@ echo "Script began:" `date`
 echo "Node:" `hostname`
 echo "Current directory: ${PWD}"
 
-echo "naive"
-./naive
+# echo "naive"
+# ./naive
 
-echo "stride"
-./stride
+# echo "stride"
+# ./stride
 
 echo "sequential"
 ./sequential
+
+echo "first add then reduce"
+./first_add
+
+echo "unroll"
+./unroll
+
+echo "multiple"
+./multiple
 
 echo ""
 echo "=== Done! ==="

@@ -57,9 +57,32 @@ dtype reduce_cpu(dtype *data, int n) {
 	return sum;
 }
 
-	__global__ void
+__global__ void
 kernel3(dtype *g_idata, dtype *g_odata, unsigned int n)
 {
+  __shared__  dtype scratch[MAX_THREADS];
+
+  unsigned int bid = gridDim.x * blockIdx.y + blockIdx.x;
+  unsigned int i = bid * (blockDim.x * 2) + threadIdx.x;
+
+  if(i < n) {
+    scratch[threadIdx.x] = g_idata[i] + g_idata[i + blockDim.x]; 
+  } else {
+    scratch[threadIdx.x] = 0;
+  }
+  __syncthreads ();
+
+  for(unsigned int s = blockDim.x / 2; s > 0; s = s >> 1) {
+    if(threadIdx.x < s
+        && (i+ s) < n) {
+      scratch[threadIdx.x] += scratch[threadIdx.x + s];
+    }
+    __syncthreads ();
+  }
+
+  if(threadIdx.x == 0) {
+    g_odata[bid] = scratch[0];
+  }
 }
 
 	int 
@@ -114,7 +137,7 @@ main(int argc, char** argv)
 
 	/* ================================================== */
 	/* GPU kernel */
-	dim3 gb(16, ((blocks + 16 - 1) / 16), 1);
+	dim3 gb(blocks, 1, 1);
 	dim3 tb(threads, 1, 1);
 
 	/* warm up */	
@@ -132,7 +155,7 @@ main(int argc, char** argv)
 		getNumBlocksAndThreads (whichKernel, s, MAX_BLOCKS, MAX_THREADS, 
 				blocks, threads);
 
-		dim3 gb(16, (blocks + 16 - 1) / 16, 1);
+		dim3 gb(blocks, 1, 1);
 		dim3 tb(threads, 1, 1);
 
 		kernel3 <<<gb, tb>>> (d_odata, d_odata, s);

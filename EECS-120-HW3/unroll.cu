@@ -57,10 +57,44 @@ dtype reduce_cpu(dtype *data, int n) {
     return sum;
 }
 
+__device__ void warpReduce(volatile dtype* data, int tid){ 
+    data[tid] += data[tid + 32];
+    data[tid] += data[tid + 16];
+    data[tid] += data[tid + 8];
+    data[tid] += data[tid + 4];
+    data[tid] += data[tid + 2];
+    data[tid] += data[tid + 1];
+}
+
 __global__ void
 kernel4(dtype *g_idata, dtype *g_odata, unsigned int n)
 {
+  __shared__  dtype scratch[MAX_THREADS];
 
+  unsigned int bid = gridDim.x * blockIdx.y + blockIdx.x;
+  unsigned int i = bid * (blockDim.x * 2) + threadIdx.x;
+
+  if(i < n) {
+    scratch[threadIdx.x] = g_idata[i] + g_idata[i + blockDim.x]; 
+  } else {
+    scratch[threadIdx.x] = 0;
+  }
+  __syncthreads ();
+
+  for(unsigned int s = blockDim.x / 2; s > 32; s = s >> 1) {
+    if(threadIdx.x < s
+        && (i+ s) < n) {
+      scratch[threadIdx.x] += scratch[threadIdx.x + s];
+    }
+    __syncthreads ();
+  }
+  if(threadIdx.x < 32){
+  	warpReduce(scratch, threadIdx.x);
+  }
+
+  if(threadIdx.x == 0) {
+    g_odata[bid] = scratch[0];
+  }
 }
 
 int 
