@@ -78,6 +78,7 @@ kernel5(dtype *g_idata, dtype *g_odata, unsigned int n)
   if(i == 0){
 	printf("gridSize=%d\n", gridSize);
 	printf("n=%d\n", n);
+	printf("gridDim.x=%d gridDim.y=%d\n", gridDim.x, gridDim.y);
   }
 
   scratch[threadIdx.x] = 0;

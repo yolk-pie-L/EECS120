@@ -9,6 +9,13 @@ typedef float dtype;
 __global__ 
 void matTrans(dtype* AT, dtype* A, int N)  {
 	/* Fill your code here */
+	int work = N * N / gridDim.x / blockDim.x;
+	int index = (blockIdx.x * blockDim.x + threadIdx.x) * work;
+	int x = index % N;
+	int y = index / N;
+	for(int i = 0; i < work; i++){
+		AT[(x + i) * N + y] = A[y * N + x + i];
+	}
 
 }
 
@@ -32,11 +39,11 @@ initArr (dtype* in, int N)
 	for(i = 0; i < N; i++) {
 		in[i] = (dtype) rand () / RAND_MAX;
 	}
-}
+	}
 
-void
-cpuTranspose (dtype* A, dtype* AT, int N)
-{
+	void
+	cpuTranspose (dtype* A, dtype* AT, int N)
+	{
 	int i, j;
 
 	for(i = 0; i < N; i++) {
@@ -62,64 +69,80 @@ cmpArr (dtype* a, dtype* b, int N)
 void
 gpuTranspose (dtype* A, dtype* AT, int N)
 {
-  struct stopwatch_t* timer = NULL;
-  long double t_gpu;
-	
-  /* Setup timers */
-  stopwatch_init ();
-  timer = stopwatch_create ();
-  
-  stopwatch_start (timer);
+	struct stopwatch_t* timer = NULL;
+	long double t_gpu;  
 
+	/* Setup timers */
+	stopwatch_init ();
+	timer = stopwatch_create ();
+
+	int blocks = 256;
+	int threads = 256;
+
+	dim3 gb(blocks, 1, 1);
+	dim3 tb(threads, 1, 1);
+
+	dtype* d_AT;
+	dtype* d_A;
+	CUDA_CHECK_ERROR (cudaMalloc (&d_AT, N * N * sizeof (dtype)));
+	CUDA_CHECK_ERROR (cudaMalloc (&d_A, N * N * sizeof (dtype)));
+	CUDA_CHECK_ERROR (cudaMemcpy (d_A, A, N * N * sizeof (dtype), 
+				cudaMemcpyHostToDevice));
+	/*warm up*/
+	matTrans <<<gb, tb>>> (d_AT, d_A, N);
+
+	stopwatch_start (timer);
 	/* run your kernel here */
+	matTrans <<<gb, tb>>> (d_AT, d_A, N);
 
-  cudaDeviceSynchronize ();
-  t_gpu = stopwatch_stop (timer);
-  fprintf (stdout, "GPU transpose: %Lg secs ==> %Lg billion elements/second\n",
-           t_gpu, (N * N) / t_gpu * 1e-9 );
+	cudaDeviceSynchronize ();
+	t_gpu = stopwatch_stop (timer);
+	fprintf (stdout, "GPU transpose: %Lg secs ==> %Lg billion elements/second\n",
+			t_gpu, (N * N) / t_gpu * 1e-9 );
+	CUDA_CHECK_ERROR (cudaMemcpy (AT, d_AT, sizeof(dtype) * N * N, cudaMemcpyDeviceToHost));
 
 }
 
 int 
 main(int argc, char** argv)
 {
-  /* variables */
+	/* variables */
 	dtype *A, *ATgpu, *ATcpu;
-  int err;
+	int err;
 
 	int N;
 
-  struct stopwatch_t* timer = NULL;
-  long double t_cpu;
+	struct stopwatch_t* timer = NULL;
+	long double t_cpu;
 
 	N = -1;
 	parseArg (argc, argv, &N);
 
-  /* input and output matrices on host */
-  /* output */
-  ATcpu = (dtype*) malloc (N * N * sizeof (dtype));
-  ATgpu = (dtype*) malloc (N * N * sizeof (dtype));
+	/* input and output matrices on host */
+	/* output */
+	ATcpu = (dtype*) malloc (N * N * sizeof (dtype));
+	ATgpu = (dtype*) malloc (N * N * sizeof (dtype));
 
-  /* input */
-  A = (dtype*) malloc (N * N * sizeof (dtype));
+	/* input */
+	A = (dtype*) malloc (N * N * sizeof (dtype));
 
 	initArr (A, N * N);
 
 	/* GPU transpose kernel */
 	gpuTranspose (A, ATgpu, N);
 
-  /* Setup timers */
-  stopwatch_init ();
-  timer = stopwatch_create ();
+	/* Setup timers */
+	stopwatch_init ();
+	timer = stopwatch_create ();
 
 	stopwatch_start (timer);
-  /* compute reference array */
+	/* compute reference array */
 	cpuTranspose (A, ATcpu, N);
-  t_cpu = stopwatch_stop (timer);
-  fprintf (stdout, "Time to execute CPU transpose kernel: %Lg secs\n",
-           t_cpu);
+	t_cpu = stopwatch_stop (timer);
+	fprintf (stdout, "Time to execute CPU transpose kernel: %Lg secs\n",
+			t_cpu);
 
-  /* check correctness */
+	/* check correctness */
 	err = cmpArr (ATgpu, ATcpu, N * N);
 	if(err) {
 		fprintf (stderr, "Transpose failed: %d\n", err);
@@ -131,5 +154,5 @@ main(int argc, char** argv)
 	free (ATgpu);
 	free (ATcpu);
 
-  return 0;
+	return 0;
 }
