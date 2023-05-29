@@ -7,16 +7,51 @@
 typedef float dtype;
 
 __global__ 
-void matTrans(dtype* AT, dtype* A, int N)  {
+void copy(dtype* AT, dtype* A, int N)  {
 	/* Fill your code here */
-	int work = N * N / gridDim.x / blockDim.x;
-	int index = (blockIdx.x * blockDim.x + threadIdx.x) * work;
-	int x = index % N;
-	int y = index / N;
-	for(int i = 0; i < work; i++){
-		AT[(x + i) * N + y] = A[y * N + x + i];
+	int index = blockIdx.x * blockDim.x * blockDim.y  + threadIdx.x;
+	int gridSize = gridDim.x * gridDim.y * blockDim.x * blockDim.y;
+	for(; index < N * N; index += gridSize){
+		AT[index] = A[index];
 	}
 
+}
+
+__global__ 
+void matTrans(dtype* AT, dtype* A, int N)  {
+	/* Fill your code here */
+  const int TILE_DIM = 64;
+  int BLOCK_ROWS = 4;
+  int x = blockIdx.x * TILE_DIM + threadIdx.x;
+  int y = blockIdx.y * TILE_DIM + threadIdx.y;
+  int width = gridDim.x * TILE_DIM;
+
+  for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
+    AT[x*width + (y+j)] = A[(y+j)*width + x];
+
+}
+
+__global__ 
+void matTrans2(dtype* AT, dtype* A, int N)  {
+	/* Fill your code here */
+  const int TILE_DIM = 64;
+  int BLOCK_ROWS = 4;
+  __shared__ dtype tile[TILE_DIM][TILE_DIM + 1];
+    
+  int x = blockIdx.x * TILE_DIM + threadIdx.x;
+  int y = blockIdx.y * TILE_DIM + threadIdx.y;
+  int width = gridDim.x * TILE_DIM;
+
+  for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
+     tile[threadIdx.x][threadIdx.y+ j] = A[(y+j)*width + x];
+
+  __syncthreads();
+
+  x = blockIdx.y * TILE_DIM + threadIdx.x;  // transpose block offset
+  y = blockIdx.x * TILE_DIM + threadIdx.y;
+
+  for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
+     AT[(y+j)*width + x] = tile[threadIdx.y+ j][threadIdx.x];
 }
 
 void
@@ -39,11 +74,11 @@ initArr (dtype* in, int N)
 	for(i = 0; i < N; i++) {
 		in[i] = (dtype) rand () / RAND_MAX;
 	}
-	}
+}
 
-	void
-	cpuTranspose (dtype* A, dtype* AT, int N)
-	{
+void
+cpuTranspose (dtype* A, dtype* AT, int N)
+{
 	int i, j;
 
 	for(i = 0; i < N; i++) {
@@ -76,11 +111,8 @@ gpuTranspose (dtype* A, dtype* AT, int N)
 	stopwatch_init ();
 	timer = stopwatch_create ();
 
-	int blocks = 256;
-	int threads = 256;
-
-	dim3 gb(blocks, 1, 1);
-	dim3 tb(threads, 1, 1);
+	dim3 gb(N/64, N/64, 1);
+	dim3 tb(64, 4, 1);
 
 	dtype* d_AT;
 	dtype* d_A;
@@ -89,11 +121,11 @@ gpuTranspose (dtype* A, dtype* AT, int N)
 	CUDA_CHECK_ERROR (cudaMemcpy (d_A, A, N * N * sizeof (dtype), 
 				cudaMemcpyHostToDevice));
 	/*warm up*/
-	matTrans <<<gb, tb>>> (d_AT, d_A, N);
+	matTrans2 <<<gb, tb>>> (d_AT, d_A, N);
 
 	stopwatch_start (timer);
 	/* run your kernel here */
-	matTrans <<<gb, tb>>> (d_AT, d_A, N);
+	matTrans2 <<<gb, tb>>> (d_AT, d_A, N);
 
 	cudaDeviceSynchronize ();
 	t_gpu = stopwatch_stop (timer);
