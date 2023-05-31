@@ -25,8 +25,8 @@ rm transpose
 # nvcc stride.cu timer.c -o stride
 # nvcc sequential.cu timer.c -o sequential
 # nvcc first_add.cu timer.c -o first_add
-# nvcc unroll.cu timer.c -o unroll
-# nvcc multiple.cu timer.c  -DGPU_DEBUG -o multiple
+nvcc unroll.cu timer.c -DGPU_DEBUG -o unroll
+nvcc multiple.cu timer.c  -DGPU_DEBUG -o multiple
 nvcc transpose.cu timer.c -DGPU_DEBUG -o transpose
 
 # Runs a bunch of standard command-line

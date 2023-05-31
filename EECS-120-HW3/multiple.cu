@@ -57,13 +57,19 @@ dtype reduce_cpu(dtype *data, int n) {
 	return sum;
 }
 
-__device__ void warpReduce(volatile dtype* data, int tid){ 
-    data[tid] += data[tid + 32];
-    data[tid] += data[tid + 16];
-    data[tid] += data[tid + 8];
-    data[tid] += data[tid + 4];
-    data[tid] += data[tid + 2];
-    data[tid] += data[tid + 1];
+__device__ void warpReduce(volatile dtype* data, int tid, unsigned int n){ 
+	if(n > 64)
+    	data[tid] += data[tid + 32];
+	if(n > 32)
+    	data[tid] += data[tid + 16];
+	if(n > 16)
+    	data[tid] += data[tid + 8];
+	if(n > 8)
+    	data[tid] += data[tid + 4];
+	if(n > 4)
+    	data[tid] += data[tid + 2];
+	if(n > 2)
+    	data[tid] += data[tid + 1];
 }
 
 __global__ void
@@ -73,28 +79,29 @@ kernel5(dtype *g_idata, dtype *g_odata, unsigned int n)
  __shared__  dtype scratch[MAX_THREADS];
 
   unsigned int bid = gridDim.x * blockIdx.y + blockIdx.x;
-  unsigned int i = bid * blockDim.x + threadIdx.x;
-  unsigned int gridSize = blockDim.x * 2 * gridDim.x;
-  if(i == 0){
-	printf("gridSize=%d\n", gridSize);
-	printf("n=%d\n", n);
-	printf("gridDim.x=%d gridDim.y=%d\n", gridDim.x, gridDim.y);
-  }
+  unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+  unsigned int gridSize = blockDim.x * gridDim.x;
 
   scratch[threadIdx.x] = 0;
+  int j = i;
 
-	while (i < n) {
-		scratch[threadIdx.x] += g_idata[i] + g_idata[i+blockDim.x];
-		i += gridSize;
+	while (j < n) {
+		scratch[threadIdx.x] += g_idata[j];
+		j += gridSize;
 	}
 
   __syncthreads ();
 
-  for(unsigned int s = blockDim.x / 2; s > 0; s = s >> 1) {
-    if(threadIdx.x < s && (i + s) < n) {
+  for(unsigned int s = blockDim.x / 2; s > 32; s = s >> 1) {
+    if(threadIdx.x < s
+        && (i+ s) < n) {
       scratch[threadIdx.x] += scratch[threadIdx.x + s];
     }
     __syncthreads ();
+  }
+
+  if(threadIdx.x < 32){
+  	warpReduce(scratch, threadIdx.x, n);
   }
 
   if(threadIdx.x == 0) {
