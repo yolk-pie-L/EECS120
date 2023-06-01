@@ -12,19 +12,19 @@
 # Module load Cuda Compiler
 module load cuda/11.7.1
 
-# rm naive
-# rm stride
-# rm sequential
-# rm first_add
-# rm unroll
-# rm multiple
+rm naive
+rm stride
+rm sequential
+rm first_add
+rm unroll
+rm multiple
 rm transpose
 
-# Compile naive
-# nvcc naive.cu timer.c -o naive
-# nvcc stride.cu timer.c -o stride
-# nvcc sequential.cu timer.c -o sequential
-# nvcc first_add.cu timer.c -o first_add
+# Compile 
+nvcc naive.cu timer.c -o naive
+nvcc stride.cu timer.c -o stride
+nvcc sequential.cu timer.c -o sequential
+nvcc first_add.cu timer.c -o first_add
 nvcc unroll.cu timer.c -DGPU_DEBUG -o unroll
 nvcc multiple.cu timer.c  -DGPU_DEBUG -o multiple
 nvcc transpose.cu timer.c -DGPU_DEBUG -o transpose

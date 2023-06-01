@@ -24,34 +24,40 @@ void matTrans(dtype* AT, dtype* A, int N)  {
   int BLOCK_ROWS = 4;
   int x = blockIdx.x * TILE_DIM + threadIdx.x;
   int y = blockIdx.y * TILE_DIM + threadIdx.y;
-  int width = gridDim.x * TILE_DIM;
+  int width = N;
 
-  for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
-    AT[x*width + (y+j)] = A[(y+j)*width + x];
+  for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS){
+	if(y+j < N && x < N)
+    		AT[x*width + (y+j)] = A[(y+j)*width + x];
 
+  }
+ 
 }
 
 __global__ 
 void matTrans2(dtype* AT, dtype* A, int N)  {
 	/* Fill your code here */
-  const int TILE_DIM = 64;
-  int BLOCK_ROWS = 4;
-  __shared__ dtype tile[TILE_DIM][TILE_DIM + 1];
-    
-  int x = blockIdx.x * TILE_DIM + threadIdx.x;
-  int y = blockIdx.y * TILE_DIM + threadIdx.y;
-  int width = gridDim.x * TILE_DIM;
+	const int TILE_DIM = 64;
+	int BLOCK_ROWS = 4;
+	__shared__ dtype tile[TILE_DIM][TILE_DIM + 1];
 
-  for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
-     tile[threadIdx.x][threadIdx.y+ j] = A[(y+j)*width + x];
+	int x = blockIdx.x * TILE_DIM + threadIdx.x;
+	int y = blockIdx.y * TILE_DIM + threadIdx.y;
+	int width = N;
 
-  __syncthreads();
+	for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
+		if((y+j)*width + x < N * N)
+			tile[threadIdx.x][threadIdx.y+ j] = A[(y+j)*width + x];
 
-  x = blockIdx.y * TILE_DIM + threadIdx.x;  // transpose block offset
-  y = blockIdx.x * TILE_DIM + threadIdx.y;
+	__syncthreads();
 
-  for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
-     AT[(y+j)*width + x] = tile[threadIdx.y+ j][threadIdx.x];
+	x = blockIdx.y * TILE_DIM + threadIdx.x;  // transpose block offset
+	y = blockIdx.x * TILE_DIM + threadIdx.y;
+
+	for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS){
+		if((y+j) < N && x < N)
+			AT[(y+j)*width + x] = tile[threadIdx.y + j][threadIdx.x]; //threadIdx.y=1 threadIdx.x=0 x=0 y=1
+	}
 }
 
 void
@@ -111,7 +117,8 @@ gpuTranspose (dtype* A, dtype* AT, int N)
 	stopwatch_init ();
 	timer = stopwatch_create ();
 
-	dim3 gb(N/64, N/64, 1);
+	int gb_x = (N + 63) / 64;
+	dim3 gb(gb_x, gb_x, 1);
 	dim3 tb(64, 4, 1);
 
 	dtype* d_AT;
@@ -121,11 +128,11 @@ gpuTranspose (dtype* A, dtype* AT, int N)
 	CUDA_CHECK_ERROR (cudaMemcpy (d_A, A, N * N * sizeof (dtype), 
 				cudaMemcpyHostToDevice));
 	/*warm up*/
-	matTrans2 <<<gb, tb>>> (d_AT, d_A, N);
+	matTrans <<<gb, tb>>> (d_AT, d_A, N);
 
 	stopwatch_start (timer);
 	/* run your kernel here */
-	matTrans2 <<<gb, tb>>> (d_AT, d_A, N);
+        matTrans <<<gb, tb>>> (d_AT, d_A, N);
 
 	cudaDeviceSynchronize ();
 	t_gpu = stopwatch_stop (timer);

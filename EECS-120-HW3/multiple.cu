@@ -93,9 +93,8 @@ kernel5(dtype *g_idata, dtype *g_odata, unsigned int n)
   __syncthreads ();
 
   for(unsigned int s = blockDim.x / 2; s > 32; s = s >> 1) {
-    if(threadIdx.x < s
-        && (i+ s) < n) {
-      scratch[threadIdx.x] += scratch[threadIdx.x + s];
+    if(threadIdx.x < s && (i+ s) < n) {
+      	scratch[threadIdx.x] += scratch[threadIdx.x + s];
     }
     __syncthreads ();
   }
