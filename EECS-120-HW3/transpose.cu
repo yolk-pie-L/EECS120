@@ -18,15 +18,13 @@ void copy(dtype* AT, dtype* A, int N)  {
 }
 
 __global__ 
-void matTrans(dtype* AT, dtype* A, int N)  {
+void matTrans2(dtype* AT, dtype* A, int N)  {
 	/* Fill your code here */
-  const int TILE_DIM = 64;
-  int BLOCK_ROWS = 4;
-  int x = blockIdx.x * TILE_DIM + threadIdx.x;
-  int y = blockIdx.y * TILE_DIM + threadIdx.y;
+  int x = blockIdx.x * blockDim.x + threadIdx.x;
+  int y = blockIdx.y * blockDim.x + threadIdx.y;
   int width = N;
 
-  for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS){
+  for (int j = 0; j < blockDim.x; j+= blockDim.y){
 	if(y+j < N && x < N)
     		AT[x*width + (y+j)] = A[(y+j)*width + x];
 
@@ -35,26 +33,24 @@ void matTrans(dtype* AT, dtype* A, int N)  {
 }
 
 __global__ 
-void matTrans2(dtype* AT, dtype* A, int N)  {
+void matTrans(dtype* AT, dtype* A, int N)  {
 	/* Fill your code here */
-	const int TILE_DIM = 64;
-	int BLOCK_ROWS = 4;
-	__shared__ dtype tile[TILE_DIM][TILE_DIM + 1];
+	__shared__ dtype tile[64][65];
 
-	int x = blockIdx.x * TILE_DIM + threadIdx.x;
-	int y = blockIdx.y * TILE_DIM + threadIdx.y;
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.x + threadIdx.y;
 	int width = N;
 
-	for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
+	for (int j = 0; j < blockDim.x; j += blockDim.y)
 		if((y+j)*width + x < N * N)
 			tile[threadIdx.x][threadIdx.y+ j] = A[(y+j)*width + x];
 
 	__syncthreads();
 
-	x = blockIdx.y * TILE_DIM + threadIdx.x;  // transpose block offset
-	y = blockIdx.x * TILE_DIM + threadIdx.y;
+	x = blockIdx.y * blockDim.x + threadIdx.x;  // transpose block offset
+	y = blockIdx.x * blockDim.x + threadIdx.y;
 
-	for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS){
+	for (int j = 0; j < blockDim.x; j += blockDim.y){
 		if((y+j) < N && x < N)
 			AT[(y+j)*width + x] = tile[threadIdx.y + j][threadIdx.x]; //threadIdx.y=1 threadIdx.x=0 x=0 y=1
 	}
